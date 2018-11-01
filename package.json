@@ -1,0 +1,22 @@
+{
+  "name": "markov-bot",
+  "version": "1.0.0",
+  "description": "Markov chain based chat bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lukabuz/markov-bot.git"
+  },
+  "author": "Luka Buzaladze",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lukabuz/markov-bot/issues"
+  },
+  "homepage": "https://github.com/lukabuz/markov-bot#readme",
+  "dependencies": {
+    "express": "^4.16.4"
+  }
+}

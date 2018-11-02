@@ -2,76 +2,45 @@ require('dotenv').config();
 
 const { Pool, Client } = require('pg');
 
-addCombination = (firstWord, secondWord) => {
-    const client = new Client({
-        connectionString: process.env.DATABASE_URL,
-        ssl: true
-    });
+const client = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: true
+});
 
+addCombination = async (firstWord, secondWord) => { return new Promise(async resolve => {
     const query = {
         text: 'SELECT * FROM combinations WHERE (firstword=$1) AND (secondword=$2)',
         values: [firstWord, secondWord],
     }
 
-    client.connect();
-    client.query(query)
-    .then(res => {
-        if(res.rowCount === 0){
-            const query = {
-                text: 'INSERT INTO combinations (firstword, secondword, timesseen) VALUES ($1, $2, 1)',
-                values: [firstWord, secondWord],
-            }
-            client.query(query)
-            .then(res => {
-                client.end()
-                console.log('Combination of "' + firstWord + '" and "' + secondWord + '" added to database.')
-            })
-            .catch(e => console.error(e.stack))
-        } else {
-            let newTimesSeen = res.rows[0].timesseen + 1;
-            client.query('UPDATE combinations SET timesseen=' + newTimesSeen + 'WHERE id=' + res.rows[0].id)
-            .then(res => {
-                client.end()
-                console.log('Combination of "' + firstWord + '" and "' + secondWord + '" has now been seen ' + newTimesSeen + ' times.')
-            })
-            .catch(e => console.error(e.stack))
-        }
-    })
-    .catch(e => {
-        client.end()
-        console.error('error', e.stack)
-    })
-}
+    let res = await client.query(query);
 
-function search(nameKey, myArray){
-    for (var i=0; i < myArray.length; i++) {
-        if (myArray[i].nextWord === nameKey) {
-            return i;
+    if(res.rowCount === 0){
+        const query = {
+            text: 'INSERT INTO combinations (firstword, secondword, timesseen) VALUES ($1, $2, 1)',
+            values: [firstWord, secondWord],
         }
+        await client.query(query);
+        console.log('Combination of "' + firstWord + '" and "' + secondWord + '" added to database.')
+        resolve()
+    } else {
+        let newTimesSeen = res.rows[0].timesseen + 1;
+        await client.query('UPDATE combinations SET timesseen=' + newTimesSeen + 'WHERE id=' + res.rows[0].id)
+        resolve()
     }
-    return false;
-}
+});}
 
-getNextWords = async (firstWord) => {
-    const client = new Client({
-        connectionString: process.env.DATABASE_URL,
-        ssl: true
-    });
-
+getNextWords = async (firstWord) => { return new Promise(async resolve => {
     const query = {
         text: 'SELECT * FROM combinations WHERE (firstword=$1)',
         values: [firstWord],
     }
 
-    await client.connect();
     const res = await client.query(query);
-    await client.end();
 
     if(res.rowCount === 0){
-        await client.end()
-        getRandomWord().then(random => {
-            return [{ nextWord: random, chance: 1}];
-        })
+        let random = await getRandomWord();
+        resolve([{ nextWord: random, chance: 1}]);
     } else {
         let words = [];
         let totalCount = 0;
@@ -82,24 +51,55 @@ getNextWords = async (firstWord) => {
                 chance: res.rows[i].timesseen / totalCount
             });
         }
-
-        return words;
+        resolve(words);
     }
+});
 }
 
-getRandomWord = async () => {
-    const client = new Client({
-        connectionString: process.env.DATABASE_URL,
-        ssl: true
-    });
-
-    await client.connect();
+getRandomWord = async () => { return new Promise(async resolve => {
     const res = await client.query('SELECT * FROM combinations ORDER BY RANDOM() LIMIT 1');
 
-    await client.end()
-    if(res.rowCount !== 0){ return res.rows[0].firstword; }
+    if(res.rowCount !== 0){ resolve(res.rows[0].firstword); } else { resolve('NA'); }
+});
 }
 
+createDataset = async (name, description, author, text) =>{ return new Promise(async resolve => {
+    const query = {
+        text: 'INSERT INTO datasets (name, description, author, text, verified) VALUES ($1, $2, $3, $4, false)',
+        values: [name, description, author, text],
+    }
+
+    const res = await client.query(query);
+
+    resolve(res.rows[0]);
+});}
+
+verifyDataset = async (datasetId) => { return new Promise(async resolve => {
+    const query = {
+        text: 'SELECT * FROM datasets WHERE ID=$1 LIMIT 1',
+        values: [datasetId],
+    }
+
+    const res = await client.query(query);
+
+    if(res.rowCount !== 1) { resolve(false) }
+
+    let text = res.rows[0].text;
+    text = text.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g," ").replace(/\s{2,}/g," ");;
+    let wordsArray = text.split(' ');
+
+    for(let i = 0; i < wordsArray.length - 1; i++){
+        await addCombination(wordsArray[i], wordsArray[i + 1]);
+    }
+
+    await client.query({
+        text: 'UPDATE datasets SET verified=true WHERE ID=$1',
+        values: [datasetId],
+    });
+
+    resolve(true);
+});}
+
 module.exports = {
-    addCombination, getNextWords, getRandomWord,
+    addCombination, getNextWords, getRandomWord, createDataset, verifyDataset
 }

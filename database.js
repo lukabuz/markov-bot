@@ -66,9 +66,9 @@ getRandomWord = async () => { return new Promise(async resolve => {
 
 getDatasets = async (verified) => { return new Promise(async resolve => {
     if(verified){ 
-        var query = 'SELECT * FROM datasets WHERE verified'; 
+        var query = 'SELECT * FROM datasets WHERE verified ORDER BY created_at DESC'; 
     } else { 
-        var query = 'SELECT * FROM datasets WHERE NOT verified'; 
+        var query = 'SELECT * FROM datasets WHERE NOT verified ORDER BY created_at DESC'; 
     }
 
     const res = await client.query(query);

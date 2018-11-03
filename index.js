@@ -16,7 +16,6 @@ chooseNextWord = (nextWords) => {
     for(let j = 0; j < nextWords.length; j++){
         randomWeight = randomWeight - nextWords[j].chance;
         if(randomWeight <= 0) { 
-            console.log('randomWeight: ', randomWeight);
             return nextWords[j].nextWord;
         }
     }
@@ -28,27 +27,22 @@ app.get('/', async (req, res)=> {
     let t0 = performance.now();
     
     let previousWord = await db.getRandomWord();
-    let sentence = '';
+    let sentence = previousWord;
+    previousWord = await db.getRandomWord();
 
-    for(i = 0; i < length; i++){
-        console.log('___________');
-        console.log('i: ', i);
-        console.log('previousword: ', previousWord);
-        sentence = sentence + previousWord;
-        if(Math.random() <= 0.05) { sentence = sentence + '. ' } else { sentence = sentence + ' ' }
-        
+    for(i = 0; i < length -1; i++){        
         let nextWords = await db.getNextWords(previousWord);
 
-        console.log('nextWords: ', nextWords);
-
+        if(nextWords[0].random) {
+            sentence =  sentence + '. ' + previousWord;
+         } else {
+            sentence = sentence + ' ' + previousWord;
+        }
         previousWord = chooseNextWord(nextWords);
-
-        console.log('sentence: ', sentence);
-        console.log('___________');
     }
 
     let time = (performance.now() - t0) / 1000;
-    time = Number((time).toFixed(1)) + ' s';
+    time = Number((time).toFixed(1));
 
     res.json({ status: 'success', message: sentence, time: time })
 });

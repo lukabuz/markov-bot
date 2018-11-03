@@ -40,7 +40,7 @@ getNextWords = async (firstWord) => { return new Promise(async resolve => {
 
     if(res.rowCount === 0){
         let random = await getRandomWord();
-        resolve([{ nextWord: random, chance: 1}]);
+        resolve([{ nextWord: random, chance: 1, random: true}]);
     } else {
         let words = [];
         let totalCount = 0;
@@ -48,7 +48,8 @@ getNextWords = async (firstWord) => { return new Promise(async resolve => {
         for(let i = 0; i < res.rows.length; i++){
             words.push({
                 nextWord: res.rows[i].secondword,
-                chance: res.rows[i].timesseen / totalCount
+                chance: res.rows[i].timesseen / totalCount,
+                random: false
             });
         }
         resolve(words);

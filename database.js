@@ -40,7 +40,7 @@ getNextWords = async (firstWord) => { return new Promise(async resolve => {
 
     if(res.rowCount === 0){
         let random = await getRandomWord();
-        resolve([{ nextWord: random, chance: 1}]);
+        resolve([{ nextWord: random, chance: 1, random: true}]);
     } else {
         let words = [];
         let totalCount = 0;
@@ -48,7 +48,8 @@ getNextWords = async (firstWord) => { return new Promise(async resolve => {
         for(let i = 0; i < res.rows.length; i++){
             words.push({
                 nextWord: res.rows[i].secondword,
-                chance: res.rows[i].timesseen / totalCount
+                chance: res.rows[i].timesseen / totalCount,
+                random: false
             });
         }
         resolve(words);
@@ -60,6 +61,19 @@ getRandomWord = async () => { return new Promise(async resolve => {
     const res = await client.query('SELECT * FROM combinations ORDER BY RANDOM() LIMIT 1');
 
     if(res.rowCount !== 0){ resolve(res.rows[0].firstword); } else { resolve('NA'); }
+});
+}
+
+getDatasets = async (verified) => { return new Promise(async resolve => {
+    if(verified){ 
+        var query = 'SELECT * FROM datasets WHERE verified ORDER BY created_at DESC'; 
+    } else { 
+        var query = 'SELECT * FROM datasets WHERE NOT verified ORDER BY created_at DESC'; 
+    }
+
+    const res = await client.query(query);
+
+    if(res.rowCount !== 0){ resolve(res.rows); } else { resolve([]); }
 });
 }
 
@@ -106,5 +120,5 @@ verifyDataset = async (datasetId) => { return new Promise(async resolve => {
 });}
 
 module.exports = {
-    addCombination, getNextWords, getRandomWord, createDataset, verifyDataset
+    addCombination, getNextWords, getRandomWord, getDatasets, createDataset, verifyDataset
 }

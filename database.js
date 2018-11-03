@@ -65,7 +65,7 @@ getRandomWord = async () => { return new Promise(async resolve => {
 
 createDataset = async (name, description, author, text) =>{ return new Promise(async resolve => {
     const query = {
-        text: 'INSERT INTO datasets (name, description, author, text, verified) VALUES ($1, $2, $3, $4, false)',
+        text: 'INSERT INTO datasets (name, description, author, text, verified) VALUES ($1, $2, $3, $4, false) RETURNING *',
         values: [name, description, author, text],
     }
 
@@ -85,8 +85,13 @@ verifyDataset = async (datasetId) => { return new Promise(async resolve => {
     if(res.rowCount !== 1) { resolve(false) }
 
     let text = res.rows[0].text;
-    text = text.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g," ").replace(/\s{2,}/g," ");;
+    text = text.replace(/[.,\/#!"'@$%\^&\*;:{}=\-_`~()]/g,'').replace(/\s{2,}/g,' ');;
     let wordsArray = text.split(' ');
+
+    for(let i = 0; i < wordsArray.length; i++){
+        wordsArray[i] = wordsArray[i].replace(/[^\w\s!?]/g,'').replace(/(\r\n\t|\n|\r\t)/gm,'');;
+        if( wordsArray[i] == '') { delete wordsArray[i] }
+    }
 
     for(let i = 0; i < wordsArray.length - 1; i++){
         await addCombination(wordsArray[i], wordsArray[i + 1]);

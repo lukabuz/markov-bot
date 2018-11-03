@@ -3,7 +3,9 @@ var bodyParser = require('body-parser');
 const app = express();
 const port = 3000;
 const db = require('./database.js')
+const validator = require('./validator.js')
 const { performance } = require('perf_hooks');
+require('dotenv').config();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -21,7 +23,7 @@ chooseNextWord = (nextWords) => {
 }
 
 app.get('/', async (req, res)=> {
-    if(!req.query.length){ res.json({ status: 'error', error: 'Please provide the sentence length.' }) }
+    if(!req.query.length){ return res.json({ status: 'error', error: 'გთხოვთ შეიყვანოთ წინადადების ზომა.' }) }
     let length = req.query.length;
     let t0 = performance.now();
     
@@ -51,19 +53,44 @@ app.get('/', async (req, res)=> {
     res.json({ status: 'success', message: sentence, time: time })
 });
 
-app.post('/train', async (req, res) => {
-    if(!req.body.text){ res.json({ status: 'error', error: 'Please provide the response texts.' }) }
-    let text = req.body.text;
-    text = text.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g," ").replace(/\s{2,}/g," ");;
-    let wordsArray = text.split(' ');
+app.post('/dataset/verify', async (req, res) => {
+    if(!req.body.password || req.body.password !== process.env.VERIFICATION_PASSWORD){ res.json({ status: 'error', error: 'პაროლი არასწორია.' }) }
+    if(!req.body.datasetid) { res.json({ status: 'error', error: 'გთხოვთ აირჩიოთ ტექსტი.' }) }
 
-    for(let i = 0; i < wordsArray.length - 1; i++){
-        await db.addCombination(wordsArray[i], wordsArray[i + 1]);
-    }
+    await db.verifyDataset(req.body.datasetid);
 
-    console.log('done adding ' + wordsArray.length + ' words to Database')
+    res.json({ status: 'success', message: 'ტექსტი გააქტიურებულია.' })
+});
 
-    res.json({ status: 'success', message: 'Text has been parsed and bot has been trained.' })
+app.post('/dataset/submit', async (req, res) => {
+    let configs = [
+        {
+            variable: 'name', variableText: 'ტექსტის სახელი', min: 5, max: 100
+        },
+        {
+            variable: 'description', variableText: 'ტექსტის აღწერა', min: 10, max: 50
+        },
+        {
+            variable: 'author', variableText: 'ავტორის სახელი', min: 2, max: 30
+        },
+        {
+            variable: 'text', variableText: 'შესასწავლი ტექსტი', min: 20, max: 5000
+        }
+    ]
+
+    let errors = validator.validate(req.body, configs);
+
+    if(![]) { return res.json({ status: 'error', errors: errors }) }
+
+    let dataset = await db.createDataset(req.body.name, req.body.description, req.body.author, req.body.text);
+
+    res.json({ 
+        status: 'success', 
+        message: 'ტექსტი დამატებულია. ვერიფიკაციის შემდეგ ამ ტექსტს მარკოვ ბოტი შეისწავლის.',
+        data: {
+            dataset: dataset
+        }
+    });
 });
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));

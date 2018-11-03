@@ -29,6 +29,7 @@ chooseNextWord = (nextWords) => {
 
 app.get('/sentence/make', async (req, res)=> {
     if(!req.query.length){ return res.json({ status: 'error', error: 'გთხოვთ შეიყვანოთ წინადადების ზომა.' }) }
+    if(req.query.length > 100){ return res.json({ status: 'error', error: 'რესურსების დასაზოგად მარკოვ ბოტი მაქსიმუმ 100 სიტყვიან წინადადებებს ადგენს.' }) }
     let length = req.query.length;
     let t0 = performance.now();
     

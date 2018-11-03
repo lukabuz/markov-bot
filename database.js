@@ -64,6 +64,19 @@ getRandomWord = async () => { return new Promise(async resolve => {
 });
 }
 
+getDatasets = async (verified) => { return new Promise(async resolve => {
+    if(verified){ 
+        var query = 'SELECT * FROM datasets WHERE verified'; 
+    } else { 
+        var query = 'SELECT * FROM datasets WHERE NOT verified'; 
+    }
+
+    const res = await client.query(query);
+
+    if(res.rowCount !== 0){ resolve(res.rows); } else { resolve([]); }
+});
+}
+
 createDataset = async (name, description, author, text) =>{ return new Promise(async resolve => {
     const query = {
         text: 'INSERT INTO datasets (name, description, author, text, verified) VALUES ($1, $2, $3, $4, false) RETURNING *',
@@ -107,5 +120,5 @@ verifyDataset = async (datasetId) => { return new Promise(async resolve => {
 });}
 
 module.exports = {
-    addCombination, getNextWords, getRandomWord, createDataset, verifyDataset
+    addCombination, getNextWords, getRandomWord, getDatasets, createDataset, verifyDataset
 }

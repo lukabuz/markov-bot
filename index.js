@@ -21,7 +21,7 @@ chooseNextWord = (nextWords) => {
     }
 }
 
-app.get('/', async (req, res)=> {
+app.get('/sentence/make', async (req, res)=> {
     if(!req.query.length){ return res.json({ status: 'error', error: 'გთხოვთ შეიყვანოთ წინადადების ზომა.' }) }
     let length = req.query.length;
     let t0 = performance.now();
@@ -45,6 +45,18 @@ app.get('/', async (req, res)=> {
     time = Number((time).toFixed(1));
 
     res.json({ status: 'success', message: sentence, time: time })
+});
+
+app.get('/dataset/all', async (req, res) => {
+    if(!req.query.verified){ return res.json({ status: 'error', error: 'გთხოვთ დააკონკრეტოთ რა ტიპის ტექსტის ნახვა გსურთ.' }) }
+    datasets = await db.getDatasets(req.query.verified === 'true');
+
+    res.json({ 
+        status: 'success', 
+        data: {
+            datasets: datasets
+        }
+    })
 });
 
 app.post('/dataset/verify', async (req, res) => {

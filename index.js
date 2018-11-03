@@ -1,7 +1,7 @@
 const express = require('express');
 var bodyParser = require('body-parser');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 5000;
 const db = require('./database.js')
 const validator = require('./validator.js')
 const { performance } = require('perf_hooks');

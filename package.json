@@ -4,7 +4,7 @@
   "description": "Markov chain based chat bot",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",

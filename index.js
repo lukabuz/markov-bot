@@ -7,6 +7,8 @@ const validator = require('./validator.js')
 const { performance } = require('perf_hooks');
 require('dotenv').config();
 
+app.use(bodyParser({limit: '5mb'}));
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 

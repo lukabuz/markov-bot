@@ -66,6 +66,16 @@ app.get('/dataset/all', async (req, res) => {
     })
 });
 
+app.post('/dataset/submit/admin', async (req, res) => {
+    if(!req.body.password || req.body.password !== process.env.VERIFICATION_PASSWORD){ res.json({ status: 'error', error: 'პაროლი არასწორია.' }) }
+
+    let dataset = await db.createDataset(req.body.name, req.body.description, req.body.author, req.body.text);
+
+    await db.verifyDataset(dataset.datasetid);
+
+    res.json({ status: 'success', message: 'ტექსტი გააქტიურებულია.' })
+});
+
 app.post('/dataset/verify', async (req, res) => {
     if(!req.body.password || req.body.password !== process.env.VERIFICATION_PASSWORD){ res.json({ status: 'error', error: 'პაროლი არასწორია.' }) }
     if(!req.body.datasetid) { res.json({ status: 'error', error: 'გთხოვთ აირჩიოთ ტექსტი.' }) }
